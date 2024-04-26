@@ -1,5 +1,6 @@
+import ballerina/sql;
 import ballerinax/mysql;
-import ballerina/config;
+import ballerinax/mysql.driver as _;
 import ballerina/io;
 
 // Define configurable variables for MySQL configurations
@@ -10,12 +11,12 @@ configurable string database = ?;
 configurable int port = ?;
 
 type Result record {
-    string registrationId;
+    string id;
     string firstName;
     string lastName;
 };
 
-public function main() {
+public function main() returns error? {
 
     // Create a MySQL client to connect to the database
     mysql:Client mysqlClient = check new (
@@ -26,13 +27,11 @@ public function main() {
         port = port
     );
 
-    stream<Result, error?> resultStream = mysqlClient->query("SELECT id, firstName, lastName FROM Customers");
+    stream<Result, sql:Error?> resultStream = mysqlClient->query(`SELECT id, firstName, lastName FROM Customers`);
 
     check from Result {id, firstName, lastName} in resultStream
-    do {
-        io:println("ID: " + id + ", Name: " + firstName + " " + lastName);
-    }
-    but {
-        io:println("Error querying the database: " + error?.message);
-    }
+        do {
+            io:println("ID: " + id + ", Name: " + firstName + " " + lastName);
+        };
+    check resultStream.close();
 }
